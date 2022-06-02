@@ -16,7 +16,6 @@ const ImageGallery = ({ pictures, onClickHandler, getPictureUrl }) => (
         getPictureUrl={getPictureUrl}
       ></GalleryItem>
     ))}
-    ;
   </ul>
 );
 
