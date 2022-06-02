@@ -3,14 +3,12 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
 import './App.css';
 import api from './services/';
-
 import Searchbar from './components/Searchbar';
 import View from './components/View';
 import { toast } from 'react-toastify';
 
 const Scroll = require('react-scroll');
 const scroll = Scroll.animateScroll;
-
 class App extends Component {
   state = {
     searchQuery: '',
