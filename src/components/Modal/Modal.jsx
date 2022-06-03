@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
 const modalRoot = document.querySelector('#modal-root');
 
-class Modal extends Component {
+class Modal extends useEffect {
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
   }
@@ -28,7 +28,7 @@ class Modal extends Component {
         <img src={url} alt="" />
         <div className={styles.modal}>{this.props.children}</div>
       </div>,
-      modalRoot,
+      modalRoot
     );
   }
 }

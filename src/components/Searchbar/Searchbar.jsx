@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import styles from './Searchbar.module.css';
 
-class Searchbar extends Component {
+class Searchbar extends useState {
   state = {
     inputValue: '',
   };
