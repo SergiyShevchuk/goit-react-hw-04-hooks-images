@@ -1,99 +1,96 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
 import './App.css';
-import api from './services/';
+import fetchPictures from './services';
+import ImageGallery from './components/ImageGallery';
+import Loader from './components/Loader';
+import Button from './components/Button';
+import Modal from './components/Modal';
 import Searchbar from './components/Searchbar';
-import View from './components/View';
 import { toast } from 'react-toastify';
 
 const Scroll = require('react-scroll');
 const scroll = Scroll.animateScroll;
-class App extends Component {
-  state = {
-    searchQuery: '',
-    response: [],
-    length: 0,
-    status: 'idle',
-    showModal: false,
-    largeImageUrl: null,
-  };
 
-  handleQuery = inputValue => {
-    this.setState({ searchQuery: inputValue });
-  };
+const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [response, setResponse] = useState([]);
+  const [length, setLength] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalVisibility, setModalVisibility] = useState(false);
+  const [largeImageUrl, setLargeImageUrl] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.searchQuery !== this.state.searchQuery &&
-      this.state.searchQuery.trim() !== ''
-    ) {
-      this.setState({ status: 'pending' });
-      api.resetPage();
-      try {
-        const data = await api.fetchPictures(this.state.searchQuery);
-        if (data.hits.length === 0) {
-          toast.error('Sorry! There are no pictures matching your query.');
-        }
-        this.setState({
-          response: data.hits,
-          length: data.totalHits,
-          status: 'resolved',
+  useEffect(() => {
+    const fetchData = () => {
+      if (currentPage === 1) setIsLoading(true);
+      fetchPictures(searchQuery, currentPage)
+        .then(data => {
+          setResponse(prevResponse => [...prevResponse, ...data.hits]);
+          setLength(data.totalHits);
+          scroll.scrollToBottom();
+          if (data.hits.length === 0) {
+            toast.error('Sorry! There are no pictures matching your query.');
+          }
+        })
+        .catch(error => {
+          console.log(error.message);
+          toast.error(`${error.message}`);
+          setIsLoading(false);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
-      } catch (error) {
-        this.setState({ status: 'rejected' });
-        console.log(error.message);
-        toast.error(`${error.message}`);
-      }
+    };
+    if (!searchQuery) return;
+    if (searchQuery.trim() !== '') {
+      fetchData();
     }
-  }
+  }, [searchQuery, currentPage]);
 
-  onButtonClickHandler = async () => {
-    api.pageIncrement();
-    try {
-      const data = await api.fetchPictures(this.state.searchQuery);
-      this.setState(prevState => {
-        return {
-          response: [...prevState.response, ...data.hits],
-          status: 'resolved',
-        };
-      });
-      scroll.scrollToBottom();
-    } catch (error) {
-      this.setState({ status: 'rejected' });
-      console.log(error.message);
-      toast.error(`${error.message}`);
-    }
+  const onButtonClickHandler = () => {
+    setCurrentPage(page => page + 1);
   };
 
-  toggleModal = e => {
-    this.setState(prevState => {
-      return { showModal: !prevState.showModal };
-    });
+  const toggleModal = () => {
+    setModalVisibility(!modalVisibility);
   };
 
-  getUrl = url => {
-    this.setState({ largeImageUrl: url });
+  const getUrl = url => {
+    setLargeImageUrl(url);
   };
 
-  render() {
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.handleQuery} />
-        <View
-          response={this.state.response}
-          length={this.state.length}
-          status={this.state.status}
-          showModal={this.state.showModal}
-          largeImageUrl={this.state.largeImageUrl}
-          toggleModal={this.toggleModal}
-          getUrl={this.getUrl}
-          onButtonClickHandler={this.onButtonClickHandler}
-        ></View>
-        <ToastContainer />
-      </div>
-    );
-  }
-}
+  const handleQuery = inputValue => {
+    setSearchQuery(inputValue);
+    setCurrentPage(1);
+    setResponse([]);
+  };
+
+  const picturesLeft = length - response.length;
+
+  return (
+    <div className="App">
+      <Searchbar onSubmit={handleQuery} />
+      <>
+        {isLoading && <Loader />}
+        {!isLoading && response.length !== 0 && (
+          <ImageGallery
+            pictures={response}
+            onClickHandler={toggleModal}
+            getPictureUrl={getUrl}
+          />
+        )}
+        {picturesLeft !== 0 && !isLoading && (
+          <Button onClickHandler={onButtonClickHandler} />
+        )}
+        {modalVisibility && largeImageUrl && (
+          <Modal url={largeImageUrl} closeModal={toggleModal}></Modal>
+        )}
+      </>
+      <ToastContainer />
+    </div>
+  );
+};
 
 export default App;
